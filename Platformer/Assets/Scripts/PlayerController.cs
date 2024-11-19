@@ -14,6 +14,7 @@ public class PlayerController : MonoBehaviour
 
     private float _acceleration;
     private Vector2 _playerInput;
+    private FacingDirection _direction = FacingDirection.right;
 
     private Rigidbody2D _rb2d;
 
@@ -56,12 +57,22 @@ public class PlayerController : MonoBehaviour
         {
             //Accelerate
             _rb2d.velocity = new(Mathf.Clamp(_rb2d.velocity.x + playerInput.x * _acceleration * Time.deltaTime, -maxSpeed, maxSpeed), _rb2d.velocity.y);
+
+            //Change facing direction
+            if (playerInput.x > 0)
+            {
+                _direction = FacingDirection.right;
+            }
+            else
+            {
+                _direction = FacingDirection.left;
+            }
         }
     }
 
     public bool IsWalking()
     {
-        return false;
+        return Mathf.Abs(_rb2d.velocity.x) > 0f;
     }
 
     public bool IsGrounded()
@@ -71,6 +82,6 @@ public class PlayerController : MonoBehaviour
 
     public FacingDirection GetFacingDirection()
     {
-        return FacingDirection.left;
+        return _direction;
     }
 }
