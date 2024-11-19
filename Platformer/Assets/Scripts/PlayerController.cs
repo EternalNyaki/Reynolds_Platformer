@@ -12,6 +12,8 @@ public class PlayerController : MonoBehaviour
     public float maxSpeed = 5f;
     public float accelerationTime = 0.2f;
 
+    public LayerMask groundMask;
+
     private float _acceleration;
     private Vector2 _playerInput;
     private FacingDirection _direction = FacingDirection.right;
@@ -77,7 +79,23 @@ public class PlayerController : MonoBehaviour
 
     public bool IsGrounded()
     {
-        return true;
+        if (!IsOnGround())
+        {
+            return false;
+        }
+        else if (_rb2d.velocity.y > 0.01f)
+        {
+            return false;
+        }
+        else
+        {
+            return true;
+        }
+    }
+
+    private bool IsOnGround()
+    {
+        return Physics2D.Raycast(transform.position, Vector2.down, 1f, groundMask);
     }
 
     public FacingDirection GetFacingDirection()
