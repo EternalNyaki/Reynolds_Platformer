@@ -9,33 +9,64 @@ public class PlayerController : MonoBehaviour
         left, right
     }
 
+    public float maxSpeed = 5f;
+    public float accelerationTime = 0.2f;
+
+    private float _acceleration;
+    private Vector2 _playerInput;
+
+    private Rigidbody2D _rb2d;
+
     // Start is called before the first frame update
     void Start()
     {
-        
+        _rb2d = GetComponent<Rigidbody2D>();
+
+        _acceleration = maxSpeed / accelerationTime;
     }
 
     // Update is called once per frame
     void Update()
     {
-        //The input from the player needs to be determined and then passed in the to the MovementUpdate which should
-        //manage the actual movement of the character.
-        Vector2 playerInput = new Vector2();
-        MovementUpdate(playerInput);
+        _playerInput.x = Input.GetAxisRaw("Horizontal");
+    }
+
+    void FixedUpdate()
+    {
+        MovementUpdate(_playerInput);
     }
 
     private void MovementUpdate(Vector2 playerInput)
     {
-
+        if (playerInput.x == 0)
+        {
+            float tolerance = _acceleration * Time.deltaTime * 2;
+            if (_rb2d.velocity.x < tolerance && _rb2d.velocity.x > -tolerance)
+            {
+                //Do nothing
+                _rb2d.velocity = new(0, _rb2d.velocity.y);
+            }
+            else
+            {
+                //Decelerate
+                _rb2d.velocity = new(Mathf.Clamp(-Mathf.Sign(_rb2d.velocity.x) * _acceleration * Time.deltaTime, -maxSpeed, maxSpeed), _rb2d.velocity.y);
+            }
+        }
+        else
+        {
+            //Accelerate
+            _rb2d.velocity = new(Mathf.Clamp(_rb2d.velocity.x + playerInput.x * _acceleration * Time.deltaTime, -maxSpeed, maxSpeed), _rb2d.velocity.y);
+        }
     }
 
     public bool IsWalking()
     {
         return false;
     }
+
     public bool IsGrounded()
     {
-        return false;
+        return true;
     }
 
     public FacingDirection GetFacingDirection()
