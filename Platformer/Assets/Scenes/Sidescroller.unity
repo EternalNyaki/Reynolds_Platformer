@@ -312,7 +312,7 @@ GameObject:
   - component: {fileID: 1054579210}
   - component: {fileID: 1054579209}
   - component: {fileID: 1054579211}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: GroundTilemap
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1695,6 +1695,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxSpeed: 7
   accelerationTime: 0.1
+  groundMask:
+    serializedVersion: 2
+    m_Bits: 8
 --- !u!4 &1433354315
 Transform:
   m_ObjectHideFlags: 0
@@ -1704,7 +1707,7 @@ Transform:
   m_GameObject: {fileID: 1433354312}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 4.04, y: -2.34, z: 0}
+  m_LocalPosition: {x: 3.85, y: -2.32, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
