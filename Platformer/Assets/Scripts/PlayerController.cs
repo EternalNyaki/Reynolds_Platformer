@@ -14,8 +14,10 @@ public class PlayerController : MonoBehaviour
     public float accelerationTime = 0.2f;
 
     public float apexHeight = 4f;
-    public float apexTime = 20 / 60;
+    public float apexTime = 0.5f;
     public float terminalVelocity = 100f;
+
+    public float coyoteTime = 0.2f;
 
     public LayerMask groundMask;
 
@@ -25,6 +27,8 @@ public class PlayerController : MonoBehaviour
 
     private float _gravity;
     private float _jumpVelocity;
+
+    private float _timeSinceLastGrounded = 0;
 
     private Rigidbody2D _rb2d;
 
@@ -45,7 +49,7 @@ public class PlayerController : MonoBehaviour
         _playerInput.x = Input.GetAxisRaw("Horizontal");
 
         float yVelocity = _rb2d.velocity.y;
-        if (Input.GetKeyDown(KeyCode.Space) && IsGrounded())
+        if (Input.GetKeyDown(KeyCode.Space) && (IsGrounded() || _timeSinceLastGrounded < coyoteTime))
         {
             Jump(ref yVelocity);
         }
@@ -54,6 +58,15 @@ public class PlayerController : MonoBehaviour
             yVelocity /= 2;
         }
         _rb2d.velocity = new(_rb2d.velocity.x, yVelocity);
+
+        if (!IsGrounded())
+        {
+            _timeSinceLastGrounded += Time.deltaTime;
+        }
+        else
+        {
+            _timeSinceLastGrounded = 0;
+        }
     }
 
     void FixedUpdate()
