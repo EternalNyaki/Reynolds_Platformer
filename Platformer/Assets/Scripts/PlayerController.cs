@@ -44,47 +44,56 @@ public class PlayerController : MonoBehaviour
     {
         _playerInput.x = Input.GetAxisRaw("Horizontal");
 
+        float yVelocity = _rb2d.velocity.y;
         if (Input.GetKeyDown(KeyCode.Space) && IsGrounded())
         {
-            Jump();
+            Jump(ref yVelocity);
         }
+        else if (Input.GetKeyUp(KeyCode.Space) && yVelocity > 0)
+        {
+            yVelocity /= 2;
+        }
+        _rb2d.velocity = new(_rb2d.velocity.x, yVelocity);
     }
 
     void FixedUpdate()
     {
         MovementUpdate(_playerInput);
-
-        GravityUpdate();
-    }
-
-    private void Jump()
-    {
-        _rb2d.velocity = new(_rb2d.velocity.x, _jumpVelocity);
     }
 
     private void MovementUpdate(Vector2 playerInput)
     {
-        if (playerInput.x == 0)
+        Vector2 velocity = _rb2d.velocity;
+
+        HorizontalMovement(playerInput.x, ref velocity.x);
+        VerticalMovement(playerInput.y, ref velocity.y);
+
+        _rb2d.velocity = velocity;
+    }
+
+    private void HorizontalMovement(float horizontalInput, ref float xVelocity)
+    {
+        if (horizontalInput == 0)
         {
             float tolerance = _acceleration * Time.deltaTime * 2;
-            if (_rb2d.velocity.x < tolerance && _rb2d.velocity.x > -tolerance)
+            if (xVelocity < tolerance && xVelocity > -tolerance)
             {
                 //Do nothing
-                _rb2d.velocity = new(0, _rb2d.velocity.y);
+                xVelocity = 0f;
             }
             else
             {
                 //Decelerate
-                _rb2d.velocity = new(Mathf.Clamp(-Mathf.Sign(_rb2d.velocity.x) * _acceleration * Time.deltaTime, -maxSpeed, maxSpeed), _rb2d.velocity.y);
+                xVelocity = Mathf.Clamp(-Mathf.Sign(xVelocity) * _acceleration * Time.deltaTime, -maxSpeed, maxSpeed);
             }
         }
         else
         {
             //Accelerate
-            _rb2d.velocity = new(Mathf.Clamp(_rb2d.velocity.x + playerInput.x * _acceleration * Time.deltaTime, -maxSpeed, maxSpeed), _rb2d.velocity.y);
+            xVelocity = Mathf.Clamp(xVelocity + horizontalInput * _acceleration * Time.deltaTime, -maxSpeed, maxSpeed);
 
             //Change facing direction
-            if (playerInput.x > 0)
+            if (horizontalInput > 0)
             {
                 _direction = FacingDirection.right;
             }
@@ -95,9 +104,14 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    private void GravityUpdate()
+    private void VerticalMovement(float verticalInput, ref float yVelocity)
     {
-        _rb2d.velocity = new(_rb2d.velocity.x, Mathf.Clamp(_rb2d.velocity.y + _gravity * Time.deltaTime, -terminalVelocity, float.PositiveInfinity));
+        yVelocity = Mathf.Clamp(yVelocity + _gravity * Time.deltaTime, -terminalVelocity, float.PositiveInfinity);
+    }
+
+    private void Jump(ref float yVelocity)
+    {
+        yVelocity = _jumpVelocity;
     }
 
     public bool IsWalking()
