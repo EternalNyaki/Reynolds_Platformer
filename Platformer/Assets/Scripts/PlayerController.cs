@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -12,11 +13,18 @@ public class PlayerController : MonoBehaviour
     public float maxSpeed = 5f;
     public float accelerationTime = 0.2f;
 
+    public float apexHeight = 4f;
+    public float apexTime = 20 / 60;
+    public float terminalVelocity = 100f;
+
     public LayerMask groundMask;
 
     private float _acceleration;
     private Vector2 _playerInput;
     private FacingDirection _direction = FacingDirection.right;
+
+    private float _gravity;
+    private float _jumpVelocity;
 
     private Rigidbody2D _rb2d;
 
@@ -26,17 +34,32 @@ public class PlayerController : MonoBehaviour
         _rb2d = GetComponent<Rigidbody2D>();
 
         _acceleration = maxSpeed / accelerationTime;
+
+        _gravity = -2 * apexHeight / Mathf.Pow(apexTime, 2);
+        _jumpVelocity = 2 * apexHeight / apexTime;
     }
 
     // Update is called once per frame
     void Update()
     {
         _playerInput.x = Input.GetAxisRaw("Horizontal");
+
+        if (Input.GetKeyDown(KeyCode.Space) && IsGrounded())
+        {
+            Jump();
+        }
     }
 
     void FixedUpdate()
     {
         MovementUpdate(_playerInput);
+
+        GravityUpdate();
+    }
+
+    private void Jump()
+    {
+        _rb2d.velocity = new(_rb2d.velocity.x, _jumpVelocity);
     }
 
     private void MovementUpdate(Vector2 playerInput)
@@ -70,6 +93,11 @@ public class PlayerController : MonoBehaviour
                 _direction = FacingDirection.left;
             }
         }
+    }
+
+    private void GravityUpdate()
+    {
+        _rb2d.velocity = new(_rb2d.velocity.x, Mathf.Clamp(_rb2d.velocity.y + _gravity * Time.deltaTime, -terminalVelocity, float.PositiveInfinity));
     }
 
     public bool IsWalking()

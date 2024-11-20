@@ -1695,6 +1695,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxSpeed: 7
   accelerationTime: 0.1
+  apexHeight: 4
+  apexTime: 0.3333333
+  terminalVelocity: 20
   groundMask:
     serializedVersion: 2
     m_Bits: 8
@@ -1789,7 +1792,7 @@ Rigidbody2D:
   m_Mass: 1
   m_LinearDrag: 0
   m_AngularDrag: 0.05
-  m_GravityScale: 1
+  m_GravityScale: 0
   m_Material: {fileID: 0}
   m_IncludeLayers:
     serializedVersion: 2
