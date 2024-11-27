@@ -10,6 +10,15 @@ public class PlayerController : MonoBehaviour
         left, right
     }
 
+    public enum CharacterState
+    {
+        idle, walking, jumping, death
+    }
+    public CharacterState currentState = CharacterState.idle;
+    public CharacterState previousState = CharacterState.idle;
+
+    public int health = 10;
+
     public float maxSpeed = 5f;
     public float accelerationTime = 0.2f;
 
@@ -27,6 +36,9 @@ public class PlayerController : MonoBehaviour
 
     private float _gravity;
     private float _jumpVelocity;
+
+    private bool _jumpTrigger;
+    private bool _jumpReleaseTrigger;
 
     private float _timeSinceLastGrounded = 0;
 
@@ -46,16 +58,67 @@ public class PlayerController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        previousState = currentState;
+
         _playerInput.x = Input.GetAxisRaw("Horizontal");
+
+        switch (currentState)
+        {
+            case CharacterState.idle:
+                if (IsWalking())
+                {
+                    currentState = CharacterState.walking;
+                }
+
+                if (!IsGrounded())
+                {
+                    currentState = CharacterState.jumping;
+                }
+                break;
+
+            case CharacterState.walking:
+                if (!IsWalking())
+                {
+                    currentState = CharacterState.idle;
+                }
+
+                if (!IsGrounded())
+                {
+                    currentState = CharacterState.jumping;
+                }
+                break;
+
+            case CharacterState.jumping:
+                if (IsGrounded())
+                {
+                    if (IsWalking())
+                    {
+                        currentState = CharacterState.walking;
+                    }
+                    else
+                    {
+                        currentState = CharacterState.idle;
+                    }
+                }
+                break;
+
+            case CharacterState.death:
+
+                break;
+        }
+        if (IsDead())
+        {
+            currentState = CharacterState.death;
+        }
 
         float yVelocity = _rb2d.velocity.y;
         if (Input.GetKeyDown(KeyCode.Space) && (IsGrounded() || _timeSinceLastGrounded < coyoteTime))
         {
-            Jump(ref yVelocity);
+            _jumpTrigger = true;
         }
         else if (Input.GetKeyUp(KeyCode.Space) && yVelocity > 0)
         {
-            yVelocity /= 2;
+            _jumpReleaseTrigger = true;
         }
         _rb2d.velocity = new(_rb2d.velocity.x, yVelocity);
 
@@ -120,11 +183,29 @@ public class PlayerController : MonoBehaviour
     private void VerticalMovement(float verticalInput, ref float yVelocity)
     {
         yVelocity = Mathf.Clamp(yVelocity + _gravity * Time.deltaTime, -terminalVelocity, float.PositiveInfinity);
+
+        if (_jumpTrigger)
+        {
+            Jump(ref yVelocity);
+
+            _jumpTrigger = false;
+        }
+        if (_jumpReleaseTrigger)
+        {
+            yVelocity /= 2;
+
+            _jumpReleaseTrigger = false;
+        }
     }
 
     private void Jump(ref float yVelocity)
     {
         yVelocity = _jumpVelocity;
+    }
+
+    public void OnDie()
+    {
+        gameObject.SetActive(false);
     }
 
     public bool IsWalking()
@@ -150,7 +231,14 @@ public class PlayerController : MonoBehaviour
 
     private bool IsOnGround()
     {
-        return Physics2D.Raycast(transform.position, Vector2.down, 1f, groundMask);
+        return Physics2D.Raycast(transform.position, Vector2.down, 0.2f, groundMask) ||
+               Physics2D.Raycast(transform.position + new Vector3(-0.375f, 0f), Vector2.down, 0.2f, groundMask) ||
+               Physics2D.Raycast(transform.position + new Vector3(0.375f, 0f), Vector2.down, 0.2f, groundMask);
+    }
+
+    public bool IsDead()
+    {
+        return health <= 0;
     }
 
     public FacingDirection GetFacingDirection()
