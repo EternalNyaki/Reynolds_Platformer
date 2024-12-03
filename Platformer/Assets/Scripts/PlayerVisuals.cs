@@ -12,7 +12,7 @@ public class PlayerVisuals : MonoBehaviour
     public SpriteRenderer bodyRenderer;
     public PlayerController playerController;
 
-    private int idleHash, walkingHash, jumpingHash, deathHash;
+    private int idleHash, walkingHash, jumpingHash, deathHash, dashingHash;
 
     // Start is called before the first frame update
     void Start()
@@ -21,7 +21,7 @@ public class PlayerVisuals : MonoBehaviour
         walkingHash = Animator.StringToHash("Walking");
         jumpingHash = Animator.StringToHash("Jumping");
         deathHash = Animator.StringToHash("Death");
-
+        dashingHash = Animator.StringToHash("Dashing");
     }
 
     // Update is called once per frame
@@ -38,19 +38,23 @@ public class PlayerVisuals : MonoBehaviour
             switch (playerController.currentState)
             {
                 case PlayerController.CharacterState.idle:
-                    animator.CrossFade("Idle", 0);
+                    animator.CrossFade(idleHash, 0f);
                     break;
 
                 case PlayerController.CharacterState.walking:
-                    animator.CrossFade("Walking", 0);
+                    animator.CrossFade(walkingHash, 0f);
                     break;
 
                 case PlayerController.CharacterState.jumping:
-                    animator.CrossFade("Jumping", 0);
+                    animator.CrossFade(jumpingHash, 0f);
                     break;
 
                 case PlayerController.CharacterState.death:
-                    animator.CrossFade("Death", 0);
+                    animator.CrossFade(deathHash, 0f);
+                    break;
+
+                case PlayerController.CharacterState.dashing:
+                    animator.CrossFade(dashingHash, 0f);
                     break;
             }
         }

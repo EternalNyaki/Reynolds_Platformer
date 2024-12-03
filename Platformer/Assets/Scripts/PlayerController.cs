@@ -12,7 +12,7 @@ public class PlayerController : MonoBehaviour
 
     public enum CharacterState
     {
-        idle, walking, jumping, death
+        idle, walking, jumping, death, dashing
     }
     public CharacterState currentState = CharacterState.idle;
     public CharacterState previousState = CharacterState.idle;
@@ -28,6 +28,9 @@ public class PlayerController : MonoBehaviour
 
     public float coyoteTime = 0.2f;
 
+    public float dashSpeed = 7f;
+    public float dashDistance = 3f;
+
     public LayerMask groundMask;
 
     private float _acceleration;
@@ -36,6 +39,8 @@ public class PlayerController : MonoBehaviour
 
     private float _gravity;
     private float _jumpVelocity;
+
+    private float _dashTime;
 
     private bool _jumpTrigger;
     private bool _jumpReleaseTrigger;
@@ -53,14 +58,14 @@ public class PlayerController : MonoBehaviour
 
         _gravity = -2 * apexHeight / Mathf.Pow(apexTime, 2);
         _jumpVelocity = 2 * apexHeight / apexTime;
+
+        _dashTime = dashDistance / dashSpeed;
     }
 
     // Update is called once per frame
     void Update()
     {
         previousState = currentState;
-
-        _playerInput.x = Input.GetAxisRaw("Horizontal");
 
         switch (currentState)
         {
@@ -105,22 +110,36 @@ public class PlayerController : MonoBehaviour
             case CharacterState.death:
 
                 break;
+
+            case CharacterState.dashing:
+
+                break;
         }
         if (IsDead())
         {
             currentState = CharacterState.death;
         }
 
-        float yVelocity = _rb2d.velocity.y;
-        if (Input.GetKeyDown(KeyCode.Space) && (IsGrounded() || _timeSinceLastGrounded < coyoteTime))
+        _playerInput.x = Input.GetAxisRaw("Horizontal");
+        _playerInput.y = Input.GetAxisRaw("Vertical");
+        _playerInput.Normalize();
+
+        if (currentState != CharacterState.dashing)
         {
-            _jumpTrigger = true;
+            if (Input.GetKeyDown(KeyCode.Space) && (IsGrounded() || _timeSinceLastGrounded < coyoteTime))
+            {
+                _jumpTrigger = true;
+            }
+            else if (Input.GetKeyUp(KeyCode.Space) && _rb2d.velocity.y > 0)
+            {
+                _jumpReleaseTrigger = true;
+            }
+
+            if (Input.GetKeyDown(KeyCode.LeftShift))
+            {
+                StartCoroutine(Dash(_playerInput));
+            }
         }
-        else if (Input.GetKeyUp(KeyCode.Space) && yVelocity > 0)
-        {
-            _jumpReleaseTrigger = true;
-        }
-        _rb2d.velocity = new(_rb2d.velocity.x, yVelocity);
 
         if (!IsGrounded())
         {
@@ -149,58 +168,80 @@ public class PlayerController : MonoBehaviour
 
     private void HorizontalMovement(float horizontalInput, ref float xVelocity)
     {
-        if (horizontalInput == 0)
+        if (currentState != CharacterState.dashing)
         {
-            float tolerance = _acceleration * Time.deltaTime * 2;
-            if (xVelocity < tolerance && xVelocity > -tolerance)
+            if (horizontalInput == 0)
             {
-                //Do nothing
-                xVelocity = 0f;
+                float tolerance = _acceleration * Time.deltaTime * 2;
+                if (xVelocity < tolerance && xVelocity > -tolerance)
+                {
+                    //Do nothing
+                    xVelocity = 0f;
+                }
+                else
+                {
+                    //Decelerate
+                    xVelocity = Mathf.Clamp(-Mathf.Sign(xVelocity) * _acceleration * Time.deltaTime, -maxSpeed, maxSpeed);
+                }
             }
             else
             {
-                //Decelerate
-                xVelocity = Mathf.Clamp(-Mathf.Sign(xVelocity) * _acceleration * Time.deltaTime, -maxSpeed, maxSpeed);
-            }
-        }
-        else
-        {
-            //Accelerate
-            xVelocity = Mathf.Clamp(xVelocity + horizontalInput * _acceleration * Time.deltaTime, -maxSpeed, maxSpeed);
+                //Accelerate
+                xVelocity = Mathf.Clamp(xVelocity + horizontalInput * _acceleration * Time.deltaTime, -maxSpeed, maxSpeed);
 
-            //Change facing direction
-            if (horizontalInput > 0)
-            {
-                _direction = FacingDirection.right;
-            }
-            else
-            {
-                _direction = FacingDirection.left;
+                //Change facing direction
+                if (horizontalInput > 0)
+                {
+                    _direction = FacingDirection.right;
+                }
+                else
+                {
+                    _direction = FacingDirection.left;
+                }
             }
         }
     }
 
     private void VerticalMovement(float verticalInput, ref float yVelocity)
     {
-        yVelocity = Mathf.Clamp(yVelocity + _gravity * Time.deltaTime, -terminalVelocity, float.PositiveInfinity);
-
-        if (_jumpTrigger)
+        if (currentState != CharacterState.dashing)
         {
-            Jump(ref yVelocity);
+            yVelocity = Mathf.Clamp(yVelocity + _gravity * Time.deltaTime, -terminalVelocity, float.PositiveInfinity);
 
-            _jumpTrigger = false;
-        }
-        if (_jumpReleaseTrigger)
-        {
-            yVelocity /= 2;
+            if (_jumpTrigger)
+            {
+                Jump(ref yVelocity);
 
-            _jumpReleaseTrigger = false;
+                _jumpTrigger = false;
+            }
+            if (_jumpReleaseTrigger)
+            {
+                yVelocity /= 2;
+
+                _jumpReleaseTrigger = false;
+            }
         }
     }
 
     private void Jump(ref float yVelocity)
     {
         yVelocity = _jumpVelocity;
+    }
+
+    private IEnumerator Dash(Vector2 dashDirection)
+    {
+        currentState = CharacterState.dashing;
+
+        float t = 0f;
+        while (t < _dashTime)
+        {
+            t += Time.deltaTime;
+
+            _rb2d.velocity = dashDirection * dashSpeed;
+
+            yield return null;
+        }
+        currentState = CharacterState.jumping;
     }
 
     public void OnDie()
