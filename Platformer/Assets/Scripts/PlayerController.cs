@@ -12,7 +12,7 @@ public class PlayerController : MonoBehaviour
 
     public enum CharacterState
     {
-        idle, walking, jumping, death, dashing
+        idle, walking, jumping, death, dashing, wallCling
     }
     public CharacterState currentState = CharacterState.idle;
     public CharacterState previousState = CharacterState.idle;
@@ -44,6 +44,7 @@ public class PlayerController : MonoBehaviour
 
     private bool _jumpTrigger;
     private bool _jumpReleaseTrigger;
+    private bool _wallJumpTrigger;
 
     private float _timeSinceLastGrounded = 0;
 
@@ -105,6 +106,13 @@ public class PlayerController : MonoBehaviour
                         currentState = CharacterState.idle;
                     }
                 }
+                else
+                {
+                    if ((IsTouchingWall(FacingDirection.left) && _playerInput.x < 0) || (IsTouchingWall(FacingDirection.right) && _playerInput.x > 0))
+                    {
+                        currentState = CharacterState.wallCling;
+                    }
+                }
                 break;
 
             case CharacterState.death:
@@ -113,6 +121,13 @@ public class PlayerController : MonoBehaviour
 
             case CharacterState.dashing:
 
+                break;
+
+            case CharacterState.wallCling:
+                if (!((IsTouchingWall(FacingDirection.left) && _playerInput.x < 0) || (IsTouchingWall(FacingDirection.right) && _playerInput.x > 0)))
+                {
+                    currentState = CharacterState.jumping;
+                }
                 break;
         }
         if (IsDead())
@@ -126,9 +141,16 @@ public class PlayerController : MonoBehaviour
 
         if (currentState != CharacterState.dashing)
         {
-            if (Input.GetKeyDown(KeyCode.Space) && (IsGrounded() || _timeSinceLastGrounded < coyoteTime))
+            if (Input.GetKeyDown(KeyCode.Space))
             {
-                _jumpTrigger = true;
+                if (IsGrounded() || _timeSinceLastGrounded < coyoteTime)
+                {
+                    _jumpTrigger = true;
+                }
+                if (currentState == CharacterState.wallCling)
+                {
+                    _wallJumpTrigger = true;
+                }
             }
             else if (Input.GetKeyUp(KeyCode.Space) && _rb2d.velocity.y > 0)
             {
@@ -162,6 +184,19 @@ public class PlayerController : MonoBehaviour
 
         HorizontalMovement(playerInput.x, ref velocity.x);
         VerticalMovement(playerInput.y, ref velocity.y);
+
+        if (_wallJumpTrigger)
+        {
+            if (_direction == FacingDirection.left)
+            {
+                velocity = new(_jumpVelocity, _jumpVelocity);
+            }
+            else
+            {
+                velocity = new(-_jumpVelocity, _jumpVelocity);
+            }
+            _wallJumpTrigger = false;
+        }
 
         _rb2d.velocity = velocity;
     }
@@ -206,7 +241,10 @@ public class PlayerController : MonoBehaviour
     {
         if (currentState != CharacterState.dashing)
         {
-            yVelocity = Mathf.Clamp(yVelocity + _gravity * Time.deltaTime, -terminalVelocity, float.PositiveInfinity);
+            if (currentState != CharacterState.wallCling)
+            {
+                yVelocity = Mathf.Clamp(yVelocity + _gravity * Time.deltaTime, -terminalVelocity, float.PositiveInfinity);
+            }
 
             if (_jumpTrigger)
             {
@@ -275,6 +313,12 @@ public class PlayerController : MonoBehaviour
         return Physics2D.Raycast(transform.position, Vector2.down, 0.2f, groundMask) ||
                Physics2D.Raycast(transform.position + new Vector3(-0.375f, 0f), Vector2.down, 0.2f, groundMask) ||
                Physics2D.Raycast(transform.position + new Vector3(0.375f, 0f), Vector2.down, 0.2f, groundMask);
+    }
+
+    public bool IsTouchingWall(FacingDirection direction)
+    {
+        int dir = direction == FacingDirection.left ? -1 : 1;
+        return Physics2D.Raycast((Vector2)transform.position + new Vector2(0.35f * dir, 0.4f), Vector2.right * dir, 0.5f, groundMask);
     }
 
     public bool IsDead()
