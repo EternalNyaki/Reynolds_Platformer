@@ -11,6 +11,8 @@ public class PlayerVisuals : MonoBehaviour
     public Animator animator;
     public SpriteRenderer bodyRenderer;
     public PlayerController playerController;
+    public CameraController cameraController;
+    public float cameraShakeIntensityMult;
 
     private int idleHash, walkingHash, jumpingHash, deathHash, dashingHash, wallClingHash;
 
@@ -31,7 +33,6 @@ public class PlayerVisuals : MonoBehaviour
         VisualsUpdate();
     }
 
-    //It is not recommended to make changes to the functionality of this code for the W10 journal.
     private void VisualsUpdate()
     {
         if (playerController.previousState != playerController.currentState)
@@ -39,10 +40,20 @@ public class PlayerVisuals : MonoBehaviour
             switch (playerController.currentState)
             {
                 case PlayerController.CharacterState.idle:
+                    if (playerController.previousState == PlayerController.CharacterState.jumping ||
+                        playerController.previousState == PlayerController.CharacterState.dashing)
+                    {
+                        cameraController.Shake(playerController.GetGroundImpact() * cameraShakeIntensityMult, 0.35f);
+                    }
                     animator.CrossFade(idleHash, 0f);
                     break;
 
                 case PlayerController.CharacterState.walking:
+                    if (playerController.previousState == PlayerController.CharacterState.jumping ||
+                        playerController.previousState == PlayerController.CharacterState.dashing)
+                    {
+                        cameraController.Shake(playerController.GetGroundImpact() * cameraShakeIntensityMult, 0.35f);
+                    }
                     animator.CrossFade(walkingHash, 0f);
                     break;
 

@@ -48,6 +48,10 @@ public class PlayerController : MonoBehaviour
 
     private float _timeSinceLastGrounded = 0;
 
+    private bool _canDash = true;
+
+    private float _prevFallingSpeed = 0f;
+
     private Rigidbody2D _rb2d;
 
     // Start is called before the first frame update
@@ -97,6 +101,8 @@ public class PlayerController : MonoBehaviour
             case CharacterState.jumping:
                 if (IsGrounded())
                 {
+                    _canDash = true;
+
                     if (IsWalking())
                     {
                         currentState = CharacterState.walking;
@@ -157,7 +163,7 @@ public class PlayerController : MonoBehaviour
                 _jumpReleaseTrigger = true;
             }
 
-            if (Input.GetKeyDown(KeyCode.LeftShift))
+            if (Input.GetKeyDown(KeyCode.LeftShift) && _canDash)
             {
                 StartCoroutine(Dash(_playerInput));
             }
@@ -196,6 +202,11 @@ public class PlayerController : MonoBehaviour
                 velocity = new(-_jumpVelocity, _jumpVelocity);
             }
             _wallJumpTrigger = false;
+        }
+
+        if (velocity.y < 0)
+        {
+            _prevFallingSpeed = velocity.y;
         }
 
         _rb2d.velocity = velocity;
@@ -269,6 +280,21 @@ public class PlayerController : MonoBehaviour
     private IEnumerator Dash(Vector2 dashDirection)
     {
         currentState = CharacterState.dashing;
+        _canDash = false;
+
+        if (dashDirection.magnitude == 0f)
+        {
+            switch (_direction)
+            {
+                case FacingDirection.left:
+                    dashDirection = Vector2.left;
+                    break;
+
+                case FacingDirection.right:
+                    dashDirection = Vector2.right;
+                    break;
+            }
+        }
 
         float t = 0f;
         while (t < _dashTime)
@@ -329,5 +355,10 @@ public class PlayerController : MonoBehaviour
     public FacingDirection GetFacingDirection()
     {
         return _direction;
+    }
+
+    public float GetGroundImpact()
+    {
+        return _prevFallingSpeed;
     }
 }
