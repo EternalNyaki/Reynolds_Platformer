@@ -31,7 +31,7 @@ public class CameraController : MonoBehaviour
         _viewportHalfSize = new(followCamera.aspect * followCamera.orthographicSize, followCamera.orthographicSize);
 
         _leftBoundary = tilemap.transform.position.x + tilemap.cellBounds.min.x + _viewportHalfSize.x;
-        _rightBoundary = tilemap.transform.position.x + tilemap.cellBounds.max.x + _viewportHalfSize.x;
+        _rightBoundary = tilemap.transform.position.x + tilemap.cellBounds.max.x - _viewportHalfSize.x;
         _bottomBoundary = tilemap.transform.position.y + tilemap.cellBounds.min.y + _viewportHalfSize.y;
     }
 

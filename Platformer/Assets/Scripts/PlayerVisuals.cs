@@ -8,17 +8,22 @@ using UnityEngine;
 /// </summary>
 public class PlayerVisuals : MonoBehaviour
 {
+    //Component references
     public Animator animator;
     public SpriteRenderer bodyRenderer;
     public PlayerController playerController;
     public CameraController cameraController;
+
+    //Camera shake intensity (set to 0 to disable camera shake)
     public float cameraShakeIntensityMult;
 
+    //Animator hashes
     private int idleHash, walkingHash, jumpingHash, deathHash, dashingHash, wallClingHash;
 
     // Start is called before the first frame update
     void Start()
     {
+        //Set animator hashes
         idleHash = Animator.StringToHash("Idle");
         walkingHash = Animator.StringToHash("Walking");
         jumpingHash = Animator.StringToHash("Jumping");
@@ -35,6 +40,7 @@ public class PlayerVisuals : MonoBehaviour
 
     private void VisualsUpdate()
     {
+        //Set animation based on player state
         if (playerController.previousState != playerController.currentState)
         {
             switch (playerController.currentState)
@@ -75,6 +81,7 @@ public class PlayerVisuals : MonoBehaviour
             }
         }
 
+        //Flip the player sprite based on facing direction
         switch (playerController.GetFacingDirection())
         {
             case PlayerController.FacingDirection.left:
